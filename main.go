@@ -61,19 +61,7 @@ func main() {
 		bar.Increment()
 	}
 	bar.FinishPrint("done!")
-	output(btk, fmt.Sprintf(*o, "suffix"))
-	calc(btk)
-}
-
-func output(tk *topk.Stream, file string) {
-	out, err := os.Create(file)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer out.Close()
-	for _, v := range tk.Keys() {
-		fmt.Fprintln(out, v.Key, v.Count, v.Error)
-	}
+	calc(btk, fmt.Sprintf(*o, "suffix"), count)
 }
 
 type Record struct {
@@ -131,7 +119,7 @@ func entropy(m map[string]int) float64 {
 	return Entropy(p)
 }
 
-func calc(tk *topk.Stream) {
+func calc(tk *topk.Stream, file string, total int) {
 	var m = make(map[string]int)
 	var m2 = make(map[string]map[string]int)
 	for _, v := range tk.Keys() {
@@ -161,13 +149,13 @@ func calc(tk *topk.Stream) {
 	sort.Slice(records, func(i, j int) bool {
 		return records[i].Score > records[j].Score
 	})
-	out, err := os.Create("village.out")
+	out, err := os.Create(file)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer out.Close()
 	for _, r := range records {
-		if r.Score < 1 {
+		if r.Score < 1 || r.Cnt-r.Err < 10 {
 			continue
 		}
 		fmt.Fprintf(out, "%s\t%d\t%d\t%f\t%f\t%f\n", r.Word, r.Cnt, r.Err, r.Poly, r.Flex, r.Score)
