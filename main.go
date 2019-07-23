@@ -14,9 +14,9 @@ import (
 	"strings"
 
 	"github.com/cheggaaa/pb"
-	"github.com/dgryski/go-topk"
 	"github.com/liuzl/goutil"
 	"github.com/liuzl/ling"
+	"github.com/liuzl/topk"
 )
 
 var (
