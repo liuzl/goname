@@ -15,7 +15,6 @@ import (
 
 	"github.com/cheggaaa/pb"
 	"github.com/liuzl/goutil"
-	"github.com/liuzl/ling"
 	"github.com/liuzl/topk"
 )
 
@@ -25,8 +24,6 @@ var (
 	c = flag.Bool("c", false, "use count flag")
 	o = flag.String("o", "output_%s.txt", "output file pattern")
 )
-
-var nlp = ling.MustNLP(ling.Norm)
 
 func main() {
 	flag.Parse()
@@ -68,12 +65,7 @@ func main() {
 				}
 			}
 		}
-		d := ling.NewDocument(line)
-		if err := nlp.Annotate(d); err != nil {
-			log.Printf("%s, %+v\n", line, err)
-			continue
-		}
-		tokens := d.XRealTokens(ling.Norm)
+		tokens := cut(line)
 		for i := 1; i < len(tokens); i++ {
 			btk.Insert(strings.Join(tokens[i:], " "), cnt)
 			ftk.Insert(strings.Join(tokens[:i], " "), cnt)
