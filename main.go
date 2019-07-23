@@ -45,7 +45,6 @@ func main() {
 		br = bufio.NewReader(f)
 	}
 	btk := topk.New(*k)
-	ftk := topk.New(*k)
 	bar := pb.StartNew(count)
 	for {
 		line, e := br.ReadString('\n')
@@ -54,13 +53,14 @@ func main() {
 		}
 		tokens := cut(strings.TrimSpace(line))
 		for i := 1; i < len(tokens); i++ {
-			btk.Insert(strings.Join(tokens[i:], " "), 1)
-			ftk.Insert(strings.Join(tokens[:i], " "), 1)
+			if strings.TrimSpace(tokens[i]) == "" {
+				continue
+			}
+			btk.InsertTokens(tokens[i:], 1)
 		}
 		bar.Increment()
 	}
 	bar.FinishPrint("done!")
-	output(ftk, fmt.Sprintf(*o, "prefix"))
 	output(btk, fmt.Sprintf(*o, "suffix"))
 	calc(btk)
 }
@@ -85,24 +85,25 @@ type Record struct {
 	Score float64
 }
 
-func poly(m map[string]int, w string) float64 {
-	terms := strings.Fields(w)
-
-	if len(terms) == 1 {
+func poly(m map[string]int, v topk.Element) float64 {
+	if len(v.Items) == 1 {
 		return 1.0
 	}
-	short := m[strings.Join(terms[1:], " ")]
+	i := 1
+	for ; strings.TrimSpace(v.Items[i]) == ""; i++ {
+	}
+	short := m[strings.TrimSpace(strings.Join(v.Items[i:], ""))]
 	if short == 0 {
 		return 1.0
 	}
-	return float64(m[w]) / float64(short)
+	return float64(m[v.Key]) / float64(short)
 }
 
-func flex(m2 map[string]map[string]int, w string) float64 {
-	if m2[w] == nil {
+func flex(m2 map[string]map[string]int, v topk.Element) float64 {
+	if m2[v.Key] == nil {
 		return 1.0
 	}
-	return entropy(m2[w])
+	return entropy(m2[v.Key])
 }
 
 func Entropy(p []float64) float64 {
@@ -134,12 +135,15 @@ func calc(tk *topk.Stream) {
 	var m = make(map[string]int)
 	var m2 = make(map[string]map[string]int)
 	for _, v := range tk.Keys() {
-		terms := strings.Fields(v.Key)
 		m[v.Key] = v.Count
+		terms := v.Items
 		if len(terms) == 1 {
 			continue
 		}
-		key := strings.Join(terms[1:], " ")
+		i := 1
+		for ; strings.TrimSpace(terms[i]) == ""; i++ {
+		}
+		key := strings.TrimSpace(strings.Join(terms[i:], ""))
 		prefix := terms[0]
 		if m2[key] == nil {
 			m2[key] = make(map[string]int)
@@ -149,8 +153,8 @@ func calc(tk *topk.Stream) {
 	var records []*Record
 	for _, v := range tk.Keys() {
 		rec := &Record{Word: v.Key, Cnt: v.Count, Err: v.Error}
-		rec.Flex = flex(m2, v.Key)
-		rec.Poly = poly(m, v.Key)
+		rec.Flex = flex(m2, v)
+		rec.Poly = poly(m, v)
 		rec.Score = rec.Flex * rec.Poly
 		records = append(records, rec)
 	}
