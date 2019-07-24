@@ -18,7 +18,7 @@ import (
 var (
 	k = flag.Int("n", 10000, "k")
 	i = flag.String("i", "input.txt.gz", "input file")
-	o = flag.String("o", "output_%s.txt", "output file pattern")
+	o = flag.String("o", "output.txt", "output file")
 )
 
 func main() {
@@ -59,7 +59,7 @@ func main() {
 		bar.Increment()
 	}
 	bar.FinishPrint("done!")
-	calc(btk, fmt.Sprintf(*o, "suffix"), count)
+	calc(btk, *o, count)
 }
 
 func calc(tk *topk.Stream, file string, total int) {
