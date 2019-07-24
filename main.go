@@ -7,9 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math"
 	"os"
-	"sort"
 	"strings"
 
 	"github.com/cheggaaa/pb"
@@ -64,61 +62,6 @@ func main() {
 	calc(btk, fmt.Sprintf(*o, "suffix"), count)
 }
 
-type Record struct {
-	Word  string
-	Cnt   int
-	Err   int
-	Poly  float64
-	Flex  float64
-	Score float64
-}
-
-func poly(m map[string]int, v topk.Element) float64 {
-	if len(v.Items) == 1 {
-		return 1.0
-	}
-	i := 1
-	for ; strings.TrimSpace(v.Items[i]) == ""; i++ {
-	}
-	short := m[strings.TrimSpace(strings.Join(v.Items[i:], ""))]
-	if short == 0 {
-		return 1.0
-	}
-	return float64(m[v.Key]) / float64(short)
-}
-
-func flex(m2 map[string]map[string]int, v topk.Element) float64 {
-	if m2[v.Key] == nil {
-		return 1.0
-	}
-	return entropy(m2[v.Key])
-}
-
-func Entropy(p []float64) float64 {
-	if len(p) == 0 {
-		return 1 //math.Maxfloat64
-	}
-	var e float64
-	for _, v := range p {
-		if v != 0 { // Entropy needs 0 * log(0) == 0
-			e -= v * math.Log(v)
-		}
-	}
-	return e
-}
-
-func entropy(m map[string]int) float64 {
-	var p []float64
-	var total float64
-	for _, v := range m {
-		total += float64(v)
-	}
-	for _, v := range m {
-		p = append(p, float64(v)/total)
-	}
-	return Entropy(p)
-}
-
 func calc(tk *topk.Stream, file string, total int) {
 	var m = make(map[string]int)
 	var m2 = make(map[string]map[string]int)
@@ -146,9 +89,6 @@ func calc(tk *topk.Stream, file string, total int) {
 		rec.Score = rec.Flex * rec.Poly
 		records = append(records, rec)
 	}
-	sort.Slice(records, func(i, j int) bool {
-		return records[i].Score > records[j].Score
-	})
 	out, err := os.Create(file)
 	if err != nil {
 		log.Fatal(err)
@@ -158,6 +98,7 @@ func calc(tk *topk.Stream, file string, total int) {
 		if r.Score < 1 || r.Cnt-r.Err < 10 {
 			continue
 		}
-		fmt.Fprintf(out, "%s\t%d\t%d\t%f\t%f\t%f\n", r.Word, r.Cnt, r.Err, r.Poly, r.Flex, r.Score)
+		fmt.Fprintf(out, "%s\t%d\t%d\t%f\t%f\t%f\n",
+			r.Word, r.Cnt, r.Err, r.Poly, r.Flex, r.Score)
 	}
 }
