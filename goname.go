@@ -44,9 +44,6 @@ func poly(m map[string]int, v topk.Element) float64 {
 }
 
 func flex(m2 map[string]map[string]int, v topk.Element) float64 {
-	if m2[v.Key] == nil {
-		return 1.0
-	}
 	return entropy(m2[v.Key])
 }
 
